@@ -1,0 +1,180 @@
+************* Count user By Grade*****************************
+public enum NiveauEtude {
+    FIRST_YEAR, SECOND_YEAR, THIRD_YEAR, FOURTH_YEAR, FIFTH_YEAR, GRADUATED;
+
+    public NiveauEtude next() {
+        switch (this) {
+            case FIRST_YEAR:
+                return SECOND_YEAR;
+            case SECOND_YEAR:
+                return THIRD_YEAR;
+            case THIRD_YEAR:
+                return FOURTH_YEAR;
+            case FOURTH_YEAR:
+                return FIFTH_YEAR;
+            case FIFTH_YEAR:
+            case GRADUATED:
+            default:
+                return GRADUATED;
+        }
+    }
+
+
+
+}
+
+
+UserServiceImpl
+     public Map<NiveauEtude, Long> countUsersByNiveauClasse() {
+        List<Object[]> counts = userRepository.countUsersByNiveauClasse();
+        return counts.stream()
+                .collect(Collectors.toMap(
+                        count -> (NiveauEtude) count[0],
+                        count -> (Long) count[1]
+                ));
+    }
+IUserService
+       public Map<NiveauEtude, Long> countUsersByNiveauClasse();
+
+UserRepository
+     @Query("SELECT niveau, COUNT(niveau) FROM User GROUP BY niveau")
+    List<Object[]> countUsersByNiveauClasse();
+UserRestController
+    @GetMapping("/count-by-niveau")
+    public Map<NiveauEtude, Long> countUsersByNiveauClasse() {
+        return userService.countUsersByNiveauClasse();
+    }
+
+************ Next Grade *****************************************
+
+UserServiceImpl
+ //@Scheduled(cron = "0 0 0 1 9 *")
+     @Scheduled(cron = "*/10 * * * * *")
+    public void updateUserGrades() {
+        List<User> users = userRepository.findAll();
+        for (User user : users) {
+            NiveauEtude currentGrade = user.getNiveau();
+            user.setNiveau(currentGrade.next());
+            userRepository.save(user);
+        }
+    }
+
+
+@EnableScheduling in application
+
+
+******************************Users Created per month *************************************
+signup controller :
+        signupRequest.setDateCreation(java.time.LocalDateTime.now());
+authserviceimpl
+ Optional<User> existingUser = userRepository.findBymail(signupRequest.getMail());
+        if (existingUser.isPresent()) {
+            // Email already exists, return false or throw an exception
+            return false;
+        }
+IUserService   
+   public Map<String, Long> countUsersByCreationMonth();
+
+
+UserServiceImpl
+ public Map<String, Long> countUsersByCreationMonth() {
+        List<Object[]> counts = userRepository.countUsersByCreationMonth();
+        return counts.stream()
+                .collect(Collectors.toMap(
+                        count -> Month.of((Integer) count[1]).name() + "-" + count[0].toString(),
+                        count -> (Long) count[2]
+                ));
+    }
+
+UserRepository
+  @Query("SELECT YEAR(u.dateCreation), MONTH(u.dateCreation), COUNT(u) FROM User u GROUP BY YEAR(u.dateCreation), MONTH(u.dateCreation)")
+    List<Object[]> countUsersByCreationMonth();
+UserRestController
+@GetMapping("/count-by-month")
+    public Map<String, Long> countUsersByCreationMonth() {
+        return userService.countUsersByCreationMonth();
+    }
+Angular : 
+component.ts
+constructor(private userService: UserService,){
+    this.getUsers();
+    this.userService.countUsersByNiveau().subscribe((pieData: any) => {
+      const pieDataPoints = [];
+      for (const type in pieData) {
+        if (pieData.hasOwnProperty(type)) {
+          pieDataPoints.push({ y: pieData[type], label: type });
+        }
+      }
+      const pieChartOptions = {
+        animationEnabled: true,
+        theme: "light2",
+        title: {
+          text: "User By Grade"
+        },
+        data: [{
+          type: "pie",
+          showInLegend: true,
+          startAngle: -90,
+          indexLabel: "{label}",
+          yValueFormatString: "#",
+          dataPoints: pieDataPoints
+        }],
+        margin: {
+          top: 20,
+          bottom: 50,
+          left: 20,
+          right: 20
+        }
+      };
+  
+      this.chartOptions.push(pieChartOptions);
+    });
+
+
+
+   
+    // Bar chart setup
+    this.userService.countUsersByCreationMonth().subscribe((data: any) => {
+      console.log(data);
+      
+      this.userCountsDataPoints = Object.keys(data).map(month => ({ label: month, y: data[month] }));
+      
+      const barChartOptions = {
+        theme: "light2",
+        title: {
+          text: "User Counts by Creation Month"
+        },
+        axisX: {
+          title: "Month",
+         // labelFontSize: 10
+        },
+        axisY: {
+          title: "User Count",
+          interval: 1 
+        },
+        data: [{
+          type: "column",
+          dataPoints: this.userCountsDataPoints
+        }]
+      };
+
+      this.chartOptions.push(barChartOptions);
+
+      // Render the chart
+      const chart = new CanvasJS.Chart("bar-chart-container", {
+        animationEnabled: true,
+        exportEnabled: true,
+        ...barChartOptions
+      });
+      chart.render();
+    });
+ 
+
+l'ajout du code html
+
+<div *ngIf="chartOptions && chartOptions[0]">
+      <canvasjs-chart [options]="chartOptions[0]" id="pie-chart"></canvasjs-chart>
+      </div>
+      <div *ngIf="chartOptions && chartOptions[1]">
+        <canvasjs-chart [options]="chartOptions[1]" id="bar-chart"></canvasjs-chart>
+      </div>
