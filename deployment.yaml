@@ -1,0 +1,167 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: highbrow-application
+---
+# Define a 'Persistent Voulume Claim'(PVC) for Mysql Storage, dynamically provisioned by cluster
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim # name of PVC essential for identifying the storage data 
+  namespace: highbrow-application
+  labels:
+    app: espritgatherdb
+spec:
+  accessModes:
+    - ReadWriteOnce   #This specifies the mode of the claim that we are trying to create.
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploymentdb
+  namespace: highbrow-application
+spec:
+  selector:
+    matchLabels:
+      app: espritgatherdb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: espritgatherdb
+    spec:
+      containers:
+        - name: espritgathersql
+          image: mysql:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
+            - name: MYSQL_DATABASE
+              value: espritgather
+          volumeMounts:        # Mounting voulume obtained from Persistent Volume Claim
+          - name: mysql-persistent-storage
+            mountPath: /var/lib/mysql #This is the path in the container on which the mounting will take place.
+      volumes:
+      - name: mysql-persistent-storage # Obtaining 'vloume' from PVC
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploymentfront
+  namespace: highbrow-application
+spec:
+  selector:
+    matchLabels:
+      app: espritgatherfront
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: espritgatherfront
+    spec:
+      containers:
+        - name: espritgatherangular
+          image: amanibensassi/espritgather:angularimage
+          ports:
+            - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploymentback
+  namespace: highbrow-application
+spec:
+  selector:
+    matchLabels:
+      app: espritgatherback
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: espritgatherback
+    spec:
+      containers:
+        - name: espritgatherspring
+          image: amanibensassi/espritgather:springimage
+          ports:
+            - containerPort: 8089
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: angular-service
+  namespace: highbrow-application
+spec:
+  selector:
+    app: espritgatherfront
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-service
+  namespace: highbrow-application
+spec:
+  selector:
+    app: espritgatherback
+  ports:
+  - protocol: TCP
+    port: 8089
+    targetPort: 8089
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sql-service
+  namespace: highbrow-application
+spec:
+  selector:
+    app: espritgatherdb
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: ingressc
+spec:
+  controller: k8s.io/ingress-nginx
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+  name: my-ingress
+  namespace: highbrow-application
+spec:
+  ingressClassName: ingressc
+  rules:
+    - http:
+        paths:
+          - path: /espritgather
+            pathType: Prefix
+            backend:
+              service:
+                name: spring-service
+                port:
+                  number: 8089
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: angular-service
+                port:
+                  number: 80
