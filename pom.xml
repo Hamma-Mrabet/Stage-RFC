@@ -124,20 +124,14 @@
     </build>
     <distributionManagement>
         <repository>
-            <id>deploymentRepo</id>
-            <name>Nexus Repository</name>
+            <id>maven-releases</id>
+            <url>http://192.168.28.128:8081/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>maven-snapshots</id>
             <url>http://192.168.28.128:8081/repository/maven-snapshots/</url>
-
-
-        </repository>
-
-
+        </snapshotRepository>
     </distributionManagement>
-    <repositories>
-        <repository>
-            <id>nexus</id>
-            <url>http://192.168.28.128:8081/repository/maven-public/</url>
-        </repository>
-    </repositories>
+
 
 </project>
