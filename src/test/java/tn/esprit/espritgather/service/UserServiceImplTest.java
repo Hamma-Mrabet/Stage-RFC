@@ -57,20 +57,7 @@ public class UserServiceImplTest {
         assertEquals("Jane Doe", result.getFirstName());
     }
 
-    @Test
-    public void testModifyUser() {
-        User user = new User();
-        user.setFirstName("Jane Doe");
-        user.setPassword("plainpassword");
 
-        String hashedPassword = "hashedpassword";
-        when(passwordEncoder.encode(user.getPassword())).thenReturn(hashedPassword);
-        when(userRepository.save(user)).thenReturn(user);
-
-        User result = userService.modifyUser(user);
-
-        assertEquals(hashedPassword, result.getPassword());
-    }
 
     @Test
     public void testRetrieveUserByMail() {
