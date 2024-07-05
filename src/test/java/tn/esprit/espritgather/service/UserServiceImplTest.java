@@ -2,9 +2,12 @@ package tn.esprit.espritgather.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import tn.esprit.espritgather.entity.User;
@@ -14,8 +17,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
+@ExtendWith(MockitoExtension.class)
 
-@SpringBootTest
 public class UserServiceImplTest {
 
     @Mock
@@ -38,7 +41,7 @@ public class UserServiceImplTest {
         user.setIdUser(1L);
         user.setFirstName("John Doe");
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         User result = userService.retrieveUser(1L);
 
