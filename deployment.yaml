@@ -68,7 +68,7 @@ spec:
     spec:
       containers:
         - name: espritgatherangular
-          image: amanibensassi/espritgather:angularimage
+          image: hammamrabet/stage-rfc-frontend:23
           ports:
             - containerPort: 80
 ---
@@ -89,7 +89,7 @@ spec:
     spec:
       containers:
         - name: espritgatherspring
-          image: amanibensassi/espritgather:springimage
+          image: hammamrabet/stage-rfc-backend:23
           ports:
             - containerPort: 8089
 ---
