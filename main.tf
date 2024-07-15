@@ -12,6 +12,7 @@ provider "azurerm" {
   subscription_id = "6b266a6c-4027-4d13-b425-a99c964cebcf"
   tenant_id       = "604f1a96-cbe8-43f8-abbf-f8eaf5d85730"
   use_msi         = false
+  use_cli         = true
 }
 
 resource "azurerm_resource_group" "aks_rg" {
