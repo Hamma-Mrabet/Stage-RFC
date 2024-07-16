@@ -16,7 +16,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "aks_rg" {
-  name     = "Stage_Rfc"
+  name     = "Stage_Rfc1"
   location = "South Africa North"
 }
 
